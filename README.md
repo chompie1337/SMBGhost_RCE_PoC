@@ -1,5 +1,7 @@
 # SMBGhost_RCE_PoC
 
+RCE PoC for CVE-2020-0796 "SMBGhost"
+
 For demonstration purposes only! Seriously. This has not been tested outside of my lab environment.
 
 Replace payload in USER_PAYLOAD in exploit.py
