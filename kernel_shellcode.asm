@@ -270,7 +270,6 @@ _find_kernel32_dll_loop:
 _alloc_mem:
     mov r15, [rel _data_addr + OFFSET_NTBASE]
     xor eax, eax
-    mov cr8, rax
     lea rdx, [rel _data_addr + OFFSET_SC_BASE_ADDR]
     mov ecx, eax
     not rcx
